@@ -5,6 +5,7 @@ function QuestionCard({ questions }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -12,6 +13,9 @@ function QuestionCard({ questions }) {
     setSelectedAnswer(answer);
     if (answer === currentQuestion.correct_answer) {
       setScore(score + 1);
+      setFeedbackMessage('Correct!');
+    } else {
+      setFeedbackMessage(`Incorrect! The correct answer was: ${currentQuestion.correct_answer}`);
     }
   };
 
@@ -19,6 +23,7 @@ function QuestionCard({ questions }) {
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
+      setFeedbackMessage('');
     } else {
       setShowResult(true);  // Show final score at the end
     }
@@ -55,6 +60,12 @@ function QuestionCard({ questions }) {
           </button>
         ))}
       </div>
+
+      {feedbackMessage && (
+        <div className="mb-4 text-lg font-semibold">
+          {feedbackMessage}
+        </div>
+      )}
 
       {selectedAnswer && (
         <button
