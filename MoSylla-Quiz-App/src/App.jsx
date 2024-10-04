@@ -1,9 +1,14 @@
-
+import QuizStart from './components/QuizStart';
 
 function App() {
+  const startQuiz = (category, difficulty) => {
+    console.log(`Quiz started with category: ${category} and difficulty: ${difficulty}`);
+    // You can now fetch questions based on this category and difficulty in the next step
+  };
+
   return (
     <div className="flex justify-center items-center h-screen">
-      <h1 className="text-3xl font-bold">Quiz App</h1>
+      <QuizStart startQuiz={startQuiz} />
     </div>
   );
 }
