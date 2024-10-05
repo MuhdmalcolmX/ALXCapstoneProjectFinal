@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function QuestionCard({ questions }) {
+function QuestionCard({ questions, recordQuizResult, category }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [score, setScore] = useState(0);
@@ -25,6 +25,7 @@ function QuestionCard({ questions }) {
       setSelectedAnswer(null);
       setFeedbackMessage('');
     } else {
+      recordQuizResult(score, category);  // Record the quiz result
       setShowResult(true);  // Show final score at the end
     }
   };
