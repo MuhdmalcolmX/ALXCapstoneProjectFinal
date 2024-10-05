@@ -39,6 +39,17 @@ function App() {
     setQuizHistory((prevHistory) => [...prevHistory, newQuiz]);
   };
 
+  const calculateAverageScore = () => {
+    if (quizHistory.length === 0) return 0;
+    const totalScore = quizHistory.reduce((total, quiz) => total + quiz.score, 0);
+    return (totalScore / quizHistory.length).toFixed(2);
+  };
+
+  const getBestScore = () => {
+    if (quizHistory.length === 0) return 0;
+    return Math.max(...quizHistory.map(quiz => quiz.score));
+  };
+
   return (
     <div className="flex justify-center items-center h-screen">
       {!quizStarted ? (
@@ -62,7 +73,11 @@ function App() {
           </div>
         )
       )}
-      <QuizHistory history={quizHistory} />
+      <QuizHistory 
+        history={quizHistory} 
+        averageScore={calculateAverageScore()} 
+        bestScore={getBestScore()} 
+      />
     </div>
   );
 }
