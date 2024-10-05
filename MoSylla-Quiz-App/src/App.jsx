@@ -10,6 +10,7 @@ function App() {
   const [quizStarted, setQuizStarted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [quizHistory, setQuizHistory] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(''); // New state for search query
 
   const startQuiz = async (category, difficulty) => {
     setLoading(true);
@@ -50,8 +51,42 @@ function App() {
     return Math.max(...quizHistory.map(quiz => quiz.score));
   };
 
+  // Search functionality
+  const filteredHistory = quizHistory.filter(quiz =>
+    quiz.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="flex justify-center items-center h-screen">
+      <div className="p-4 max-w-md mx-auto">
+        <h2 className="text-2xl font-bold mb-4">Quiz History</h2>
+        <input
+          type="text"
+          placeholder="Search quizzes by category..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        />
+        {filteredHistory.length === 0 ? (
+          <p>No quizzes found matching your search.</p>
+        ) : (
+          <>
+            <div className="mb-4">
+              <p className="font-semibold">Average Score: {calculateAverageScore()}</p>
+              <p className="font-semibold">Best Score: {getBestScore()}</p>
+            </div>
+            <ul className="space-y-2">
+              {filteredHistory.map((quiz, index) => (
+                <li key={index} className="border p-2 rounded">
+                  <p>Date: {quiz.date}</p>
+                  <p>Category: {quiz.category}</p>
+                  <p>Score: {quiz.score}</p>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
       {!quizStarted ? (
         <QuizStart startQuiz={startQuiz} />
       ) : (
@@ -73,11 +108,7 @@ function App() {
           </div>
         )
       )}
-      <QuizHistory 
-        history={quizHistory} 
-        averageScore={calculateAverageScore()} 
-        bestScore={getBestScore()} 
-      />
+      
     </div>
   );
 }
