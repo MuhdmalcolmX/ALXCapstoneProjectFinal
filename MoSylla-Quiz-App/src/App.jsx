@@ -11,8 +11,6 @@ function App() {
   const [quizStarted, setQuizStarted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [quizHistory, setQuizHistory] = useState([]);
-  const [searchQuery, setSearchQuery] = useState(''); // Search input
-  const [hasSearched, setHasSearched] = useState(false); // To check if search was performed
   const [currentCategoryName, setCurrentCategoryName] = useState('');
 
   // Fetch categories
@@ -41,8 +39,6 @@ function App() {
       }
       const fetchedQuestions = response.data.results;
       setQuestions(fetchedQuestions);
-
-      // Extract category name
       const categoryName = fetchedQuestions[0].category;
       setCurrentCategoryName(categoryName);
       setQuizStarted(true);
@@ -56,15 +52,9 @@ function App() {
     const newQuiz = {
       date: new Date().toLocaleString(),
       score,
-      category: categoryName, // Store category name
+      category: categoryName,
     };
-  
-    console.log('New quiz recorded:', newQuiz); // Check the categoryName here
-  
-    setQuizHistory((prevHistory) => {
-      console.log('Updated quiz history:', [...prevHistory, newQuiz]); // Check the whole quiz history
-      return [...prevHistory, newQuiz];
-    });
+    setQuizHistory((prevHistory) => [...prevHistory, newQuiz]);
   };
 
   const calculateAverageScore = () => {
@@ -78,46 +68,21 @@ function App() {
     return Math.max(...quizHistory.map((quiz) => quiz.score));
   };
 
-  // Filter quiz history based on search query
-  const filteredHistory = quizHistory.filter((quiz) => {
-    return quiz.category && quiz.category.toLowerCase().trim().includes(searchQuery.toLowerCase().trim());
-  });
-  
-
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    setHasSearched(true); // Set to true when user starts searching
-    console.log('Search Query:', query); // Debug: check the input query
-    console.log('Filtered History:', filteredHistory); // Debug: check the filtered results
-  };
-
   return (
     <div className="flex justify-center items-center h-screen">
       {!quizStarted ? (
-      <QuizStart categories={categories} startQuiz={startQuiz} />
-    ) : (
-      <QuestionCard
-        questions={questions}
-        recordQuizResult={recordQuizResult}
-        categoryName={currentCategoryName} // Make sure this is correct
-      />
-    )}
+        <QuizStart categories={categories} startQuiz={startQuiz} />
+      ) : (
+        <QuestionCard
+          questions={questions}
+          recordQuizResult={recordQuizResult}
+          categoryName={currentCategoryName}
+        />
+      )}
 
       <div className="p-4 max-w-md mx-auto">
-        <input
-          type="text"
-          placeholder="Search quizzes by category..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="w-full p-2 border rounded mb-4"
-        />
-        {/* Only show the "No quizzes found" message if a search was performed */}
-        {hasSearched && filteredHistory.length === 0 && (
-          <p>No quizzes found matching your search.</p>
-        )}
-        {filteredHistory.length > 0 && (
-          <QuizHistory history={filteredHistory} averageScore={calculateAverageScore()} bestScore={getBestScore()} />
+        {quizHistory.length > 0 && (
+          <QuizHistory history={quizHistory} averageScore={calculateAverageScore()} bestScore={getBestScore()} />
         )}
       </div>
     </div>

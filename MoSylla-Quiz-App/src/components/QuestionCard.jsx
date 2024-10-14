@@ -4,39 +4,32 @@ function QuestionCard({ questions, recordQuizResult, categoryName }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [feedback, setFeedback] = useState('');
-
-  const currentQuestion = questions[currentQuestionIndex];
-  const shuffledAnswers = [...currentQuestion.incorrect_answers, currentQuestion.correct_answer]
-    .sort(() => Math.random() - 0.5); // Shuffle answers
 
   const handleAnswerSelection = (answer) => {
     setSelectedAnswer(answer);
-    if (answer === currentQuestion.correct_answer) {
+    if (answer === questions[currentQuestionIndex].correct_answer) {
       setScore(score + 1);
-      setFeedback('Correct!');
-    } else {
-      setFeedback('Incorrect!');
     }
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer(null); // Reset the selected answer for the next question
-      setFeedback(''); // Reset feedback for the new question
-    } else {
-      recordQuizResult(score, categoryName); // Ensure categoryName is passed correctly
+    if (currentQuestionIndex >= questions.length - 1) {
+      recordQuizResult(score, categoryName);
       alert(`Quiz finished! Your score is ${score}`);
+    } else {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelectedAnswer(null); // Reset selected answer for the next question
     }
   };
+
+  const currentQuestion = questions[currentQuestionIndex];
 
   return (
     <div>
       <h3>Question {currentQuestionIndex + 1}</h3>
       <p>{currentQuestion.question}</p>
       <div>
-        {shuffledAnswers.map((answer, index) => (
+        {currentQuestion.incorrect_answers.concat(currentQuestion.correct_answer).map((answer, index) => (
           <button 
             key={index} 
             onClick={() => handleAnswerSelection(answer)} 
@@ -46,13 +39,7 @@ function QuestionCard({ questions, recordQuizResult, categoryName }) {
           </button>
         ))}
       </div>
-      {feedback && <p>{feedback}</p>} {/* Display feedback */}
-      <button 
-        onClick={handleNextQuestion}
-        disabled={!selectedAnswer} // Disable "Next Question" if no answer is selected
-      >
-        Next Question
-      </button>
+      <button onClick={handleNextQuestion}>Next Question</button>
     </div>
   );
 }
