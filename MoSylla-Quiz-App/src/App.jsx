@@ -1,20 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import QuizStart from './components/QuizStart';
 import QuestionCard from './components/QuestionCard';
 import QuizHistory from './components/QuizHistory';
 
 function App() {
+  const [categories, setCategories] = useState([]); // Store categories
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [quizHistory, setQuizHistory] = useState([]);
-  const [searchQuery, setSearchQuery] = useState(''); // New state for search query
+  const [searchQuery, setSearchQuery] = useState(''); // Search input
+  const [hasSearched, setHasSearched] = useState(false); // To check if search was performed
 
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get('https://opentdb.com/api_category.php');
+        setCategories(response.data.trivia_categories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Fetch questions by category and difficulty
   const startQuiz = async (category, difficulty) => {
     setLoading(true);
-    setErrorMessage(''); // Reset error message
+    setErrorMessage('');
     try {
       const response = await axios.get(
         `https://opentdb.com/api.php?amount=10&category=${category}&difficulty=${difficulty}&type=multiple`
@@ -25,7 +41,6 @@ function App() {
       setQuestions(response.data.results);
       setQuizStarted(true);
     } catch (error) {
-      console.error('Error fetching questions:', error);
       setErrorMessage(error.message || 'Failed to fetch quiz questions. Please try again later.');
     }
     setLoading(false);
@@ -48,67 +63,57 @@ function App() {
 
   const getBestScore = () => {
     if (quizHistory.length === 0) return 0;
-    return Math.max(...quizHistory.map(quiz => quiz.score));
+    return Math.max(...quizHistory.map((quiz) => quiz.score));
   };
 
-  // Search functionality
-  const filteredHistory = quizHistory.filter(quiz =>
-    quiz.category.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter quiz history based on search query
+  const filteredHistory = quizHistory.filter((quiz) =>
+    quiz.category && quiz.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setHasSearched(true); // Set to true when user starts searching
+  };
 
   return (
     <div className="flex justify-center items-center h-screen">
+      {!quizStarted ? (
+        <QuizStart categories={categories} startQuiz={startQuiz} />
+      ) : loading ? (
+        <div>Loading...</div>
+      ) : (
+        <div className="w-full max-w-3xl">
+          {errorMessage ? (
+            <div className="text-red-500">{errorMessage}</div>
+          ) : (
+            questions.length > 0 && (
+              <QuestionCard
+                questions={questions}
+                recordQuizResult={recordQuizResult}
+                category={questions[0].category} // Pass the category for history
+              />
+            )
+          )}
+        </div>
+      )}
+
       <div className="p-4 max-w-md mx-auto">
-        <h2 className="text-2xl font-bold mb-4">Quiz History</h2>
         <input
           type="text"
           placeholder="Search quizzes by category..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange} // Update search query and set hasSearched to true
           className="w-full p-2 border rounded mb-4"
         />
-        {filteredHistory.length === 0 ? (
+        {/* Only show the "No quizzes found" message if a search was performed */}
+        {hasSearched && filteredHistory.length === 0 && (
           <p>No quizzes found matching your search.</p>
-        ) : (
-          <>
-            <div className="mb-4">
-              <p className="font-semibold">Average Score: {calculateAverageScore()}</p>
-              <p className="font-semibold">Best Score: {getBestScore()}</p>
-            </div>
-            <ul className="space-y-2">
-              {filteredHistory.map((quiz, index) => (
-                <li key={index} className="border p-2 rounded">
-                  <p>Date: {quiz.date}</p>
-                  <p>Category: {quiz.category}</p>
-                  <p>Score: {quiz.score}</p>
-                </li>
-              ))}
-            </ul>
-          </>
+        )}
+        {filteredHistory.length > 0 && (
+          <QuizHistory history={filteredHistory} averageScore={calculateAverageScore()} bestScore={getBestScore()} />
         )}
       </div>
-      {!quizStarted ? (
-        <QuizStart startQuiz={startQuiz} />
-      ) : (
-        loading ? (
-          <div>Loading...</div>
-        ) : (
-          <div className="w-full max-w-3xl">
-            {errorMessage ? (
-              <div className="text-red-500">{errorMessage}</div>
-            ) : (
-              questions.length > 0 && (
-                <QuestionCard 
-                  questions={questions} 
-                  recordQuizResult={recordQuizResult} 
-                  category={questions[0].category}  // Pass the category for history
-                />
-              )
-            )}
-          </div>
-        )
-      )}
-      
     </div>
   );
 }
