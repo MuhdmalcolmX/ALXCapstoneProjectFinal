@@ -5,7 +5,7 @@ import QuestionCard from './components/QuestionCard';
 import QuizHistory from './components/QuizHistory';
 
 function App() {
-  const [categories, setCategories] = useState([]); // Store categories
+  const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
@@ -13,6 +13,7 @@ function App() {
   const [quizHistory, setQuizHistory] = useState([]);
   const [searchQuery, setSearchQuery] = useState(''); // Search input
   const [hasSearched, setHasSearched] = useState(false); // To check if search was performed
+  const [currentCategoryName, setCurrentCategoryName] = useState('');
 
   // Fetch categories
   useEffect(() => {
@@ -28,17 +29,22 @@ function App() {
   }, []);
 
   // Fetch questions by category and difficulty
-  const startQuiz = async (category, difficulty) => {
+  const startQuiz = async (categoryId, difficulty) => {
     setLoading(true);
     setErrorMessage('');
     try {
       const response = await axios.get(
-        `https://opentdb.com/api.php?amount=10&category=${category}&difficulty=${difficulty}&type=multiple`
+        `https://opentdb.com/api.php?amount=10&category=${categoryId}&difficulty=${difficulty}&type=multiple`
       );
       if (response.data.results.length === 0) {
         throw new Error('No questions found for the selected category and difficulty.');
       }
-      setQuestions(response.data.results);
+      const fetchedQuestions = response.data.results;
+      setQuestions(fetchedQuestions);
+
+      // Extract category name
+      const categoryName = fetchedQuestions[0].category;
+      setCurrentCategoryName(categoryName);
       setQuizStarted(true);
     } catch (error) {
       setErrorMessage(error.message || 'Failed to fetch quiz questions. Please try again later.');
@@ -46,13 +52,19 @@ function App() {
     setLoading(false);
   };
 
-  const recordQuizResult = (score, category) => {
+  const recordQuizResult = (score, categoryName) => {
     const newQuiz = {
       date: new Date().toLocaleString(),
       score,
-      category,
+      category: categoryName, // Store category name
     };
-    setQuizHistory((prevHistory) => [...prevHistory, newQuiz]);
+  
+    console.log('New quiz recorded:', newQuiz); // Check the categoryName here
+  
+    setQuizHistory((prevHistory) => {
+      console.log('Updated quiz history:', [...prevHistory, newQuiz]); // Check the whole quiz history
+      return [...prevHistory, newQuiz];
+    });
   };
 
   const calculateAverageScore = () => {
@@ -67,43 +79,37 @@ function App() {
   };
 
   // Filter quiz history based on search query
-  const filteredHistory = quizHistory.filter((quiz) =>
-    quiz.category && quiz.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredHistory = quizHistory.filter((quiz) => {
+    return quiz.category && quiz.category.toLowerCase().trim().includes(searchQuery.toLowerCase().trim());
+  });
+  
 
   const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
+    const query = e.target.value;
+    setSearchQuery(query);
     setHasSearched(true); // Set to true when user starts searching
+    console.log('Search Query:', query); // Debug: check the input query
+    console.log('Filtered History:', filteredHistory); // Debug: check the filtered results
   };
 
   return (
     <div className="flex justify-center items-center h-screen">
       {!quizStarted ? (
-        <QuizStart categories={categories} startQuiz={startQuiz} />
-      ) : loading ? (
-        <div>Loading...</div>
-      ) : (
-        <div className="w-full max-w-3xl">
-          {errorMessage ? (
-            <div className="text-red-500">{errorMessage}</div>
-          ) : (
-            questions.length > 0 && (
-              <QuestionCard
-                questions={questions}
-                recordQuizResult={recordQuizResult}
-                category={questions[0].category} // Pass the category for history
-              />
-            )
-          )}
-        </div>
-      )}
+      <QuizStart categories={categories} startQuiz={startQuiz} />
+    ) : (
+      <QuestionCard
+        questions={questions}
+        recordQuizResult={recordQuizResult}
+        categoryName={currentCategoryName} // Make sure this is correct
+      />
+    )}
 
       <div className="p-4 max-w-md mx-auto">
         <input
           type="text"
           placeholder="Search quizzes by category..."
           value={searchQuery}
-          onChange={handleSearchChange} // Update search query and set hasSearched to true
+          onChange={handleSearchChange}
           className="w-full p-2 border rounded mb-4"
         />
         {/* Only show the "No quizzes found" message if a search was performed */}
